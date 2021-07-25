@@ -6,6 +6,7 @@ CONFIG_FILENAME=kworkflow.config
 VM_TARGET=1
 LOCAL_TARGET=2
 REMOTE_TARGET=3
+RPI4_TARGET=4
 
 # VM should be the default
 TARGET="$VM_TARGET"

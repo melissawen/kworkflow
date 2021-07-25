@@ -82,7 +82,7 @@ function cp_host2remote()
   local user=${5:-${configurations[ssh_user]}}
   local flag=${6:-"HIGHLIGHT_CMD"}
 
-  cmd_manager "$flag" "rsync -e 'ssh -p $port' -La $src $user@$remote:$dst --rsync-path='sudo rsync'"
+  cmd_manager "$flag" "rsync -e 'ssh -p $port' -av $src $user@$remote:$dst --rsync-path='sudo rsync'"
   if [[ -v configurations['ssh_configfile'] && -v configurations['hostname'] ]]; then
     cmd_manager "$flag" "rsync -e 'ssh -F ${configurations['ssh_configfile']}' -La $src ${configurations['hostname']}:$dst --rsync-path='sudo rsync'"
   fi

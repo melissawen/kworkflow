@@ -205,6 +205,10 @@ function deploy_parser_options()
           options_values['TARGET']="$VM_TARGET"
           continue
           ;;
+        --rpi)
+          options_values["TARGET"]="$RPI4_TARGET"
+          continue
+          ;;
         --reboot | -r)
           options_values['REBOOT']=1
           continue
@@ -241,12 +245,19 @@ function deploy_parser_options()
         if [[ "$?" == 22 ]]; then
           options_values['ERROR']="$option"
           return 22
+	fi
+      elif [[ "$uninstall" != 1 &&
+        ${options_values['TARGET']} == "$RPI4_TARGET" ]]; then
+        populate_remote_info "$option"
+        if [[ "$?" == 22 ]]; then
+          options_values['ERROR']="$option"
+          return 22
         fi
       elif [[ "$uninstall" == 1 ]]; then
         options_values['UNINSTALL']+="$option"
         enable_collect_param=0
       else
-        # Invalind option
+        # Invalid option
         options_values['ERROR']="$option"
         return 22
       fi
@@ -260,8 +271,7 @@ function deploy_parser_options()
   fi
 
   case "${options_values['TARGET']}" in
-    1 | 2 | 3) ;;
-
+    1 | 2 | 3 | 4 ) ;;
     *)
       options_values['ERROR']='remote option'
       return 22
@@ -458,6 +468,39 @@ function modules_install()
       local cmd="bash $REMOTE_KW_DEPLOY/deploy.sh --modules $release.tar"
       cmd_remotely "$cmd" "$flag" "$remote" "$port"
       ;;
+    4) # RPI4_TARGET
+      # 1. Preparation steps
+      prepare_host_deploy_dir
+
+      #prepare_remote_dir
+      local cmd="mkdir -p /tmp/new_modules /tmp/new_kernel /tmp/new_kernel/overlays"
+      cmd_remotely "$cmd"
+
+      # 2. Send files modules
+      modules_install_to "$KW_CACHE_DIR/$LOCAL_REMOTE_DIR/" "$flag"
+
+      cp_host2remote "$KW_CACHE_DIR/$LOCAL_REMOTE_DIR/" "/tmp/new_modules/"
+
+      # 3. Send boot files
+      # FIXME: create a tarball and send it
+      local arch="${configurations[arch]}"
+      release=$(get_kernel_release "$flag")
+      success "Kernel: $release"
+
+      # According to the RaspberryPi Documentation
+      cp_host2remote "arch/$arch/boot/zImage" "/tmp/new_kernel/$release"
+      cp_host2remote "arch/$arch/boot/dts/*.dtb" "/tmp/new_kernel"
+      cp_host2remote "arch/$arch/boot/dts/overlays/*.dtb*" "/tmp/new_kernel/overlays"
+      cp_host2remote "arch/$arch/boot/dts/overlays/README" "/tmp/new_kernel/overlays"
+
+      # 4. Deploy: set boot and rootfs files
+      cmd="sudo rsync -av /tmp/new_modules/lib/modules/ /lib/modules/"
+      cmd_remotely "$cmd"
+      cmd="sudo rsync -av /tmp/new_kernel/ /boot/"
+      cmd_remotely "$cmd"
+
+      cleanup
+      ;;
   esac
 }
 # This function is responsible for handling the command to
@@ -471,10 +514,17 @@ function modules_install_to()
 {
   local install_to="$1"
   local flag="$2"
+  local arch="${configurations[arch]}"
+  local cross_compile=""
 
   flag=${flag:-""}
+  arch=${arch:-"x86_64"}
 
-  local cmd="make INSTALL_MOD_PATH=$install_to modules_install"
+  if [[ ! -z "${configurations[cross_compile]}" ]]; then
+    cross_compile="CROSS_COMPILE=${configurations[cross_compile]}"
+  fi
+
+  local cmd="make ARCH=$arch $cross_compile INSTALL_MOD_PATH=$install_to modules_install"
   set +e
   cmd_manager "$flag" "$cmd"
 }
