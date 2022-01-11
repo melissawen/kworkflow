@@ -488,10 +488,14 @@ function modules_install()
       success "Kernel: $release"
 
       # According to the RaspberryPi Documentation
-      cp_host2remote "arch/$arch/boot/zImage" "/tmp/new_kernel/$release"
-      cp_host2remote "arch/$arch/boot/dts/*.dtb" "/tmp/new_kernel"
+#      cp_host2remote "arch/$arch/boot/zImage" "/tmp/new_kernel/$release"
+#      cp_host2remote "arch/$arch/boot/dts/*.dtb" "/tmp/new_kernel"
+#      cp_host2remote "arch/$arch/boot/dts/overlays/*.dtb*" "/tmp/new_kernel/overlays"
+#      cp_host2remote "arch/$arch/boot/dts/overlays/README" "/tmp/new_kernel/overlays"
+
+      cp_host2remote "arch/$arch/boot/Image" "/tmp/new_kernel/$release"
+      cp_host2remote "arch/$arch/boot/dts/broadcom/*.dtb" "/tmp/new_kernel"
       cp_host2remote "arch/$arch/boot/dts/overlays/*.dtb*" "/tmp/new_kernel/overlays"
-      cp_host2remote "arch/$arch/boot/dts/overlays/README" "/tmp/new_kernel/overlays"
 
       # 4. Deploy: set boot and rootfs files
       cmd="sudo rsync -av /tmp/new_modules/lib/modules/ /lib/modules/"
