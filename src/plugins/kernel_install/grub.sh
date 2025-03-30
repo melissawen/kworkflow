@@ -165,7 +165,7 @@ function total_of_installed_kernels()
   local total_count
   local find_cmd="find /boot -name 'vmlinuz*' | wc --lines"
 
-  [[ "$target" == 'local' ]] && find_cmd="sudo --preserve-env ${find_cmd}"
+  [[ "$target" == 'local' ]] && find_cmd='sudo -- sh -c "${find_cmd}"'
 
   [[ "$flag" != 'TEST_MODE' ]] && total_count=$(eval "$find_cmd")
   total_count=$((total_count * 2 + 7))

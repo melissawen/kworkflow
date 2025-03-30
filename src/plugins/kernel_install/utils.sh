@@ -209,7 +209,7 @@ function list_all_kernels()
 
   cmd_get_kernels="find ${prefix}/boot/ -name '*linuz*' -printf '%f\n' | sort --dictionary"
 
-  output=$(cmd_manager 'SILENT' "$cmd_get_kernels")
+  output=$(cmd_manager 'SILENT' 'sudo -- sh -c "$cmd_get_kernels"')
   readarray -t raw_kernel_name_list <<< "$output"
 
   for element in "${raw_kernel_name_list[@]}"; do
